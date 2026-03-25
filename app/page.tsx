@@ -11,9 +11,9 @@ export default function Home() {
           Agribridge
         </h1>
         <p className="mt-4 max-w-2xl text-lg text-emerald-100/95">
-          Connect farmers with farmers and buyers. List produce, see bulk supply
-          by area, browse market prices, and send purchase requests — all in one
-          prototype.
+          Bridge farmers with other farmers and buyers, especially those in rural
+          areas like Nyabihu, Gakenke, Burera, and Rusizi, connecting them to
+          sellers and markets everywhere.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
@@ -61,15 +61,15 @@ export default function Home() {
         <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
           <h2 className="font-semibold text-emerald-900">Market insight</h2>
           <p className="mt-2 text-sm text-stone-600">
-            Sample regional prices and combined supply (“bulk”) for the same
-            product in an area.
+            Reference prices you maintain, and farmer-approved bulk pools for large
+            buyers and suppliers.
           </p>
           <div className="mt-3 flex flex-col gap-1 text-sm font-medium text-emerald-700">
             <Link href="/prices" className="hover:underline">
               Market prices →
             </Link>
             <Link href="/bulk" className="hover:underline">
-              Bulk by area →
+              Bulk sales →
             </Link>
           </div>
         </div>

@@ -27,6 +27,10 @@ export async function GET() {
         name: user.name,
         role: user.role,
         location: user.location,
+        district: user.district ?? "",
+        sector: user.sector ?? "",
+        cell: user.cell ?? "",
+        village: user.village ?? "",
       },
     });
   } catch (err: unknown) {

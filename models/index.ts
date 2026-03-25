@@ -8,3 +8,8 @@ export {
   AggregatedProduct,
   type AggregatedProductDocument,
 } from "./AggregatedProduct";
+export {
+  Notification,
+  type NotificationDocument,
+} from "./Notification";
+export { BulkPool, type BulkPoolDocument } from "./BulkPool";

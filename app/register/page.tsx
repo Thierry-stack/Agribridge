@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { apiJson } from "@/lib/client-api";
+import { PasswordInput } from "@/components/PasswordInput";
 import type { SessionUser } from "@/components/AppHeader";
 
 export default function RegisterPage() {
@@ -11,19 +12,45 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [location, setLocation] = useState("");
   const [role, setRole] = useState<"farmer" | "buyer">("farmer");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  /** Farmers: full Rwanda admin hierarchy (avoids duplicate cell/village names). */
+  const [district, setDistrict] = useState("");
+  const [sector, setSector] = useState("");
+  const [cell, setCell] = useState("");
+  const [village, setVillage] = useState("");
+  /** Buyers: simple area line (optional). */
+  const [buyerArea, setBuyerArea] = useState("");
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
+      const payload =
+        role === "farmer"
+          ? {
+              email,
+              password,
+              name,
+              role,
+              district,
+              sector,
+              cell,
+              village,
+            }
+          : {
+              email,
+              password,
+              name,
+              role,
+              location: buyerArea,
+            };
       const data = await apiJson<{ user: SessionUser }>("/api/auth/register", {
         method: "POST",
-        body: JSON.stringify({ email, password, name, role, location }),
+        body: JSON.stringify(payload),
       });
       router.push(
         data.user.role === "farmer" ? "/dashboard/farmer" : "/dashboard/buyer"
@@ -37,7 +64,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-md flex-1 px-4 py-12">
+    <div className="mx-auto w-full max-w-lg flex-1 px-4 py-12">
       <h1 className="text-2xl font-bold text-emerald-950">Create account</h1>
       <p className="mt-1 text-sm text-stone-600">
         Already have an account?{" "}
@@ -70,18 +97,19 @@ export default function RegisterPage() {
             onChange={(e) => setEmail(e.target.value)}
           />
         </label>
-        <label className="block">
+        <label className="block" htmlFor="register-password">
           <span className="text-sm font-medium text-stone-700">Password</span>
-          <input
-            type="password"
+          <PasswordInput
+            id="register-password"
             required
             minLength={6}
             autoComplete="new-password"
-            className="mt-1 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-stone-900 placeholder:text-stone-500"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <span className="text-xs text-stone-500">At least 6 characters</span>
+          <span className="mt-1 block text-xs text-stone-500">
+            At least 6 characters
+          </span>
         </label>
         <fieldset>
           <legend className="text-sm font-medium text-stone-700">I am a</legend>
@@ -108,18 +136,82 @@ export default function RegisterPage() {
             </label>
           </div>
         </fieldset>
-        <label className="block">
-          <span className="text-sm font-medium text-stone-700">
-            Location (district / area)
-          </span>
-          <input
-            type="text"
-            className="mt-1 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-stone-900 placeholder:text-stone-500"
-            placeholder="e.g. Kigali, Gasabo"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-          />
-        </label>
+
+        {role === "farmer" ? (
+          <div className="space-y-3 rounded-lg border border-emerald-200 bg-emerald-50/50 p-4">
+            <p className="text-sm font-medium text-emerald-900">
+              Your location (required)
+            </p>
+            <p className="text-xs text-stone-600">
+              We use district, sector, and cell together so names are not confused
+              across Rwanda. Alerts go to farmers in the same <strong>cell</strong>.
+            </p>
+            <label className="block">
+              <span className="text-sm font-medium text-stone-700">
+                District (Akarere)
+              </span>
+              <input
+                type="text"
+                required
+                className="mt-1 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-stone-900 placeholder:text-stone-500"
+                placeholder="e.g. Nyabihu"
+                value={district}
+                onChange={(e) => setDistrict(e.target.value)}
+              />
+            </label>
+            <label className="block">
+              <span className="text-sm font-medium text-stone-700">
+                Sector (Umurenge)
+              </span>
+              <input
+                type="text"
+                required
+                className="mt-1 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-stone-900 placeholder:text-stone-500"
+                placeholder="e.g. Muko"
+                value={sector}
+                onChange={(e) => setSector(e.target.value)}
+              />
+            </label>
+            <label className="block">
+              <span className="text-sm font-medium text-stone-700">
+                Cell (Akagari)
+              </span>
+              <input
+                type="text"
+                required
+                className="mt-1 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-stone-900 placeholder:text-stone-500"
+                value={cell}
+                onChange={(e) => setCell(e.target.value)}
+              />
+            </label>
+            <label className="block">
+              <span className="text-sm font-medium text-stone-700">
+                Village (Umudugu)
+              </span>
+              <input
+                type="text"
+                required
+                className="mt-1 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-stone-900 placeholder:text-stone-500"
+                value={village}
+                onChange={(e) => setVillage(e.target.value)}
+              />
+            </label>
+          </div>
+        ) : (
+          <label className="block">
+            <span className="text-sm font-medium text-stone-700">
+              Area / notes (optional)
+            </span>
+            <input
+              type="text"
+              className="mt-1 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-stone-900 placeholder:text-stone-500"
+              placeholder="e.g. Kigali — where you usually buy"
+              value={buyerArea}
+              onChange={(e) => setBuyerArea(e.target.value)}
+            />
+          </label>
+        )}
+
         {error && (
           <p className="text-sm text-red-600" role="alert">
             {error}

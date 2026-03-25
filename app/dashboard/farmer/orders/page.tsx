@@ -25,6 +25,7 @@ export default function FarmerIncomingOrdersPage() {
   const router = useRouter();
   const [user, setUser] = useState<SessionUser | null | undefined>(undefined);
   const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [searchQ, setSearchQ] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -56,6 +57,21 @@ export default function FarmerIncomingOrdersPage() {
     })();
   }, [router, load]);
 
+  const q = searchQ.trim().toLowerCase();
+  const filteredOrders =
+    q.length === 0
+      ? orders
+      : orders.filter((o) => {
+          const name = o.product?.name?.toLowerCase() ?? "";
+          const buyer =
+            (o.buyer?.name ?? o.buyer?.email ?? "").toLowerCase();
+          const st = o.status.toLowerCase();
+          const msg = (o.buyerMessage ?? "").toLowerCase();
+          return (
+            name.includes(q) || buyer.includes(q) || st.includes(q) || msg.includes(q)
+          );
+        });
+
   if (user === undefined) {
     return (
       <div className="flex flex-1 items-center justify-center p-8 text-stone-600">
@@ -82,13 +98,28 @@ export default function FarmerIncomingOrdersPage() {
         </p>
       )}
 
+      <div className="mt-4 max-w-md">
+        <input
+          type="search"
+          placeholder="Search by product, buyer, status…"
+          className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-stone-900 placeholder:text-stone-500"
+          value={searchQ}
+          onChange={(e) => setSearchQ(e.target.value)}
+        />
+      </div>
+
       <ul className="mt-6 space-y-3">
-        {orders.length === 0 && !error && (
+        {filteredOrders.length === 0 && !error && orders.length > 0 && (
+          <li className="rounded-lg border border-dashed border-stone-300 bg-stone-50 p-8 text-center text-stone-600">
+            No requests match your search.
+          </li>
+        )}
+        {filteredOrders.length === 0 && !error && orders.length === 0 && (
           <li className="rounded-lg border border-dashed border-stone-300 bg-stone-50 p-8 text-center text-stone-600">
             No incoming requests yet.
           </li>
         )}
-        {orders.map((o) => (
+        {filteredOrders.map((o) => (
           <li
             key={o._id}
             className="flex gap-3 rounded-xl border border-stone-200 bg-white p-4 shadow-sm"

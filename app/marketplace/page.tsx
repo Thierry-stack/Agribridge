@@ -22,6 +22,7 @@ type ProductRow = {
 
 export default function MarketplacePage() {
   const [products, setProducts] = useState<ProductRow[]>([]);
+  const [searchQ, setSearchQ] = useState("");
   const [productType, setProductType] = useState("");
   const [location, setLocation] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +37,7 @@ export default function MarketplacePage() {
       const params = new URLSearchParams();
       if (productType.trim()) params.set("productType", productType.trim());
       if (location.trim()) params.set("location", location.trim());
+      if (searchQ.trim()) params.set("q", searchQ.trim());
       const q = params.toString();
       const data = await apiJson<{ products: ProductRow[] }>(
         `/api/products${q ? `?${q}` : ""}`
@@ -45,7 +47,7 @@ export default function MarketplacePage() {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load");
     }
-  }, [productType, location]);
+  }, [productType, location, searchQ]);
 
   /** Load all products once; use Apply to filter. */
   useEffect(() => {
@@ -114,7 +116,14 @@ export default function MarketplacePage() {
 
       <div className="mt-6 flex flex-wrap gap-3 rounded-xl border border-stone-200 bg-white p-4 text-stone-900 shadow-sm">
         <input
-          placeholder="Filter by product (e.g. tomato)"
+          type="search"
+          placeholder="Search name, type, or location"
+          className="min-w-[200px] flex-1 rounded-md border border-stone-300 bg-white px-3 py-2 text-stone-900 placeholder:text-stone-500"
+          value={searchQ}
+          onChange={(e) => setSearchQ(e.target.value)}
+        />
+        <input
+          placeholder="Filter by product type (e.g. tomato)"
           className="min-w-[200px] flex-1 rounded-md border border-stone-300 bg-white px-3 py-2 text-stone-900 placeholder:text-stone-500"
           value={productType}
           onChange={(e) => setProductType(e.target.value)}

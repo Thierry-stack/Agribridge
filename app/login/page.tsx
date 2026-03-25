@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { apiJson } from "@/lib/client-api";
+import { PasswordInput } from "@/components/PasswordInput";
 import type { SessionUser } from "@/components/AppHeader";
 
 export default function LoginPage() {
@@ -57,13 +58,12 @@ export default function LoginPage() {
             onChange={(e) => setEmail(e.target.value)}
           />
         </label>
-        <label className="block">
+        <label className="block" htmlFor="login-password">
           <span className="text-sm font-medium text-stone-700">Password</span>
-          <input
-            type="password"
+          <PasswordInput
+            id="login-password"
             required
             autoComplete="current-password"
-            className="mt-1 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-stone-900 placeholder:text-stone-500"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />

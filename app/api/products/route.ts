@@ -19,14 +19,25 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const productType = searchParams.get("productType")?.trim() ?? "";
     const location = searchParams.get("location")?.trim() ?? "";
+    const q = searchParams.get("q")?.trim() ?? "";
 
-    const filter: Record<string, unknown> = {};
+    const clauses: object[] = [];
     if (productType) {
-      filter.productType = new RegExp(escapeRegex(productType), "i");
+      clauses.push({
+        productType: new RegExp(escapeRegex(productType), "i"),
+      });
     }
     if (location) {
-      filter.location = new RegExp(escapeRegex(location), "i");
+      clauses.push({ location: new RegExp(escapeRegex(location), "i") });
     }
+    if (q) {
+      const rx = new RegExp(escapeRegex(q), "i");
+      clauses.push({
+        $or: [{ name: rx }, { productType: rx }, { location: rx }],
+      });
+    }
+    const filter =
+      clauses.length === 0 ? {} : clauses.length === 1 ? clauses[0] : { $and: clauses };
 
     const products = await Product.find(filter)
       .populate("farmer", "name location email")

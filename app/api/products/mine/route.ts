@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import { Product } from "@/models/Product";
 import { getAuthUser } from "@/lib/auth";
+import { escapeRegex } from "@/lib/string-utils";
 
 /**
  * GET /api/products/mine
- * Lists products created by the logged-in farmer.
+ * Lists products created by the logged-in farmer. Optional ?q= search on name, type, location.
  */
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await getAuthUser();
     if (!session) {
@@ -20,8 +21,19 @@ export async function GET() {
       );
     }
 
+    const q = new URL(request.url).searchParams.get("q")?.trim() ?? "";
+    const clauses: object[] = [{ farmer: session.userId }];
+    if (q) {
+      const rx = new RegExp(escapeRegex(q), "i");
+      clauses.push({
+        $or: [{ name: rx }, { productType: rx }, { location: rx }],
+      });
+    }
+    const filter =
+      clauses.length === 1 ? clauses[0] : { $and: clauses };
+
     await connectDB();
-    const products = await Product.find({ farmer: session.userId })
+    const products = await Product.find(filter)
       .sort({ createdAt: -1 })
       .lean();
 

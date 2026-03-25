@@ -53,6 +53,10 @@ export async function POST(request: Request) {
         name: user.name,
         role: user.role,
         location: user.location,
+        district: user.district ?? "",
+        sector: user.sector ?? "",
+        cell: user.cell ?? "",
+        village: user.village ?? "",
       },
     });
     return withAuthCookie(res, token);

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import { AppHeader } from "@/components/AppHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import "./globals.css";
@@ -17,7 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Agribridge — Farmers & buyers in Rwanda",
   description:
-    "Digital marketplace connecting farmers to buyers: listings, bulk availability, and market prices.",
+    "Bridge farmers with farmers and buyers across Rwanda — including rural areas like Nyabihu, Gakenke, Burera, and Rusizi — to sellers and markets everywhere.",
 };
 
 export default function RootLayout({
@@ -34,6 +35,17 @@ export default function RootLayout({
         <AppHeader />
         <main className="flex flex-1 flex-col">{children}</main>
         <SiteFooter />
+        {/* Chatling.ai assistant — config must run before the embed script */}
+        <Script id="chtl-config" strategy="beforeInteractive">
+          {`window.chtlConfig = { chatbotId: "9836637727" };`}
+        </Script>
+        <Script
+          id="chtl-script"
+          src="https://chatling.ai/js/embed.js"
+          strategy="afterInteractive"
+          async
+          data-id="9836637727"
+        />
       </body>
     </html>
   );

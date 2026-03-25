@@ -11,12 +11,17 @@ export type SessionUser = {
   name: string;
   role: "farmer" | "buyer";
   location: string;
+  district?: string;
+  sector?: string;
+  cell?: string;
+  village?: string;
 };
 
 export function AppHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<SessionUser | null | undefined>(undefined);
+  const [unread, setUnread] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -32,6 +37,23 @@ export function AppHeader() {
       cancelled = true;
     };
   }, [pathname]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await apiJson<{ unreadCount: number }>(
+          "/api/notifications/count"
+        );
+        if (!cancelled) setUnread(data.unreadCount);
+      } catch {
+        if (!cancelled) setUnread(0);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname, user]);
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
@@ -51,7 +73,7 @@ export function AppHeader() {
             Marketplace
           </Link>
           <Link className="opacity-90 hover:opacity-100" href="/bulk">
-            Bulk
+            Bulk sales
           </Link>
           <Link className="opacity-90 hover:opacity-100" href="/prices">
             Prices
@@ -60,6 +82,17 @@ export function AppHeader() {
             <span className="text-emerald-300/80">…</span>
           ) : user ? (
             <>
+              <Link
+                href="/notifications"
+                className="relative opacity-90 hover:opacity-100"
+              >
+                Alerts
+                {unread > 0 && (
+                  <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-400 px-1 text-[10px] font-bold text-emerald-950">
+                    {unread > 9 ? "9+" : unread}
+                  </span>
+                )}
+              </Link>
               {user.role === "farmer" ? (
                 <Link
                   className="rounded-md bg-emerald-700/80 px-2 py-1 font-medium hover:bg-emerald-600"

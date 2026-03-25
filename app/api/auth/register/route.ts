@@ -3,11 +3,12 @@ import { connectDB } from "@/lib/mongodb";
 import { User } from "@/models/User";
 import { hashPassword } from "@/lib/password";
 import { createAuthToken, withAuthCookie } from "@/lib/auth";
+import { notifyNearbyFarmersOnRegister } from "@/lib/notify-nearby-farmers";
 
 /**
  * POST /api/auth/register
- * Body: { email, password, name, role: "farmer" | "buyer", location? }
- * Creates a user, hashes the password, sets an HTTP-only session cookie.
+ * Farmers must send district, sector, cell, village (Rwanda admin hierarchy).
+ * Buyers may omit or partially fill location fields.
  */
 export async function POST(request: Request) {
   try {
@@ -16,6 +17,10 @@ export async function POST(request: Request) {
     const password = typeof body.password === "string" ? body.password : "";
     const name = typeof body.name === "string" ? body.name.trim() : "";
     const role = body.role === "farmer" || body.role === "buyer" ? body.role : null;
+    const district = typeof body.district === "string" ? body.district.trim() : "";
+    const sector = typeof body.sector === "string" ? body.sector.trim() : "";
+    const cell = typeof body.cell === "string" ? body.cell.trim() : "";
+    const village = typeof body.village === "string" ? body.village.trim() : "";
     const location =
       typeof body.location === "string" ? body.location.trim() : "";
 
@@ -41,6 +46,18 @@ export async function POST(request: Request) {
       );
     }
 
+    if (role === "farmer") {
+      if (!district || !sector || !cell || !village) {
+        return NextResponse.json(
+          {
+            error:
+              "Farmers must provide district (Akarere), sector (Umurenge), cell (Akagari), and village (Umudugu).",
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     await connectDB();
     const passwordHash = await hashPassword(password);
 
@@ -49,8 +66,16 @@ export async function POST(request: Request) {
       passwordHash,
       name,
       role,
-      location,
+      district: role === "farmer" ? district : district || "",
+      sector: role === "farmer" ? sector : sector || "",
+      cell: role === "farmer" ? cell : cell || "",
+      village: role === "farmer" ? village : village || "",
+      location: role === "buyer" ? location : "",
     });
+
+    if (role === "farmer") {
+      await notifyNearbyFarmersOnRegister(user._id);
+    }
 
     const token = await createAuthToken({
       userId: user._id.toString(),
@@ -65,6 +90,10 @@ export async function POST(request: Request) {
         name: user.name,
         role: user.role,
         location: user.location,
+        district: user.district,
+        sector: user.sector,
+        cell: user.cell,
+        village: user.village,
       },
     });
     return withAuthCookie(res, token);
