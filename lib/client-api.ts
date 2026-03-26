@@ -27,10 +27,14 @@ export async function apiJson<T>(
   return data as T;
 }
 
-/** POST multipart/form-data (e.g. file upload). Do not set Content-Type — browser adds boundary. */
-export async function apiForm<T>(path: string, formData: FormData): Promise<T> {
+/** POST or PATCH multipart/form-data (e.g. file upload). Do not set Content-Type — browser adds boundary. */
+export async function apiForm<T>(
+  path: string,
+  formData: FormData,
+  method: "POST" | "PATCH" = "POST"
+): Promise<T> {
   const res = await fetch(path, {
-    method: "POST",
+    method,
     credentials: "include",
     body: formData,
   });

@@ -43,8 +43,10 @@ export default function FarmerDashboardPage() {
   const [listSearchQ, setListSearchQ] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [listingsError, setListingsError] = useState<string | null>(null);
+  const [listingActionError, setListingActionError] = useState<string | null>(null);
   const [bulkActionError, setBulkActionError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const [name, setName] = useState("");
   const [productType, setProductType] = useState("");
@@ -214,7 +216,38 @@ export default function FarmerDashboardPage() {
     }
   }
 
-  async function addProduct(e: React.FormEvent) {
+  function clearProductForm() {
+    setName("");
+    setProductType("");
+    setQuantity("");
+    setPricePerUnit("");
+    setLocation("");
+    setUnit("kg");
+    setImageFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    clearProductForm();
+    setFormError(null);
+  }
+
+  function startEdit(p: ProductRow) {
+    setEditingId(p._id);
+    setName(p.name);
+    setProductType(p.productType);
+    setQuantity(String(p.quantity));
+    setUnit(p.unit);
+    setPricePerUnit(String(p.pricePerUnit));
+    setLocation(p.location);
+    setImageFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    setFormError(null);
+    setListingActionError(null);
+  }
+
+  async function saveProduct(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
     setLoading(true);
@@ -229,20 +262,42 @@ export default function FarmerDashboardPage() {
       if (imageFile) {
         fd.append("image", imageFile);
       }
-      await apiForm("/api/products", fd);
-      setName("");
-      setProductType("");
-      setQuantity("");
-      setPricePerUnit("");
-      setLocation("");
-      setImageFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (editingId) {
+        await apiForm(`/api/products/${editingId}`, fd, "PATCH");
+        cancelEdit();
+      } else {
+        await apiForm("/api/products", fd);
+        clearProductForm();
+      }
       await loadProducts();
       await loadPoolPickList();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Could not add product");
+      setFormError(
+        err instanceof Error ? err.message : "Could not save product"
+      );
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function deleteProduct(id: string) {
+    if (
+      !window.confirm(
+        "Delete this listing permanently? You cannot undo this."
+      )
+    ) {
+      return;
+    }
+    setListingActionError(null);
+    try {
+      await apiJson(`/api/products/${id}`, { method: "DELETE" });
+      if (editingId === id) cancelEdit();
+      await loadProducts();
+      await loadPoolPickList();
+    } catch (err) {
+      setListingActionError(
+        err instanceof Error ? err.message : "Could not delete listing"
+      );
     }
   }
 
@@ -261,10 +316,23 @@ export default function FarmerDashboardPage() {
 
       <div className="mt-8 grid gap-8 lg:grid-cols-2">
         <form
-          onSubmit={addProduct}
+          onSubmit={saveProduct}
           className="space-y-3 rounded-xl border border-stone-200 bg-white p-4 text-stone-900 shadow-sm"
         >
-          <h2 className="font-semibold text-emerald-900">Add product</h2>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-semibold text-emerald-900">
+              {editingId ? "Edit listing" : "Add product"}
+            </h2>
+            {editingId && (
+              <button
+                type="button"
+                onClick={() => cancelEdit()}
+                className="text-sm font-medium text-stone-600 hover:text-stone-900"
+              >
+                Cancel edit
+              </button>
+            )}
+          </div>
           <input
             required
             placeholder="Product name (e.g. Fresh tomatoes)"
@@ -324,6 +392,9 @@ export default function FarmerDashboardPage() {
             />
             <p className="mt-1 text-xs text-stone-500">
               JPG, PNG, WebP, or GIF — max 2MB.
+              {editingId
+                ? " Leave empty to keep the current photo; choose a file to replace it."
+                : ""}
             </p>
           </div>
           {formError && <p className="text-sm text-red-600">{formError}</p>}
@@ -332,7 +403,11 @@ export default function FarmerDashboardPage() {
             disabled={loading}
             className="w-full rounded-lg bg-emerald-800 py-2 font-semibold text-white disabled:opacity-60"
           >
-            {loading ? "Saving…" : "Publish listing"}
+            {loading
+              ? "Saving…"
+              : editingId
+                ? "Save changes"
+                : "Publish listing"}
           </button>
         </form>
 
@@ -341,6 +416,11 @@ export default function FarmerDashboardPage() {
           {listingsError && (
             <p className="mt-1 text-sm text-red-600" role="alert">
               {listingsError}
+            </p>
+          )}
+          {listingActionError && (
+            <p className="mt-1 text-sm text-red-600" role="alert">
+              {listingActionError}
             </p>
           )}
           <div className="mt-2 flex flex-wrap gap-2">
@@ -373,6 +453,22 @@ export default function FarmerDashboardPage() {
                   <span className="font-medium text-stone-900">{p.name}</span> —{" "}
                   {p.quantity} {p.unit} @ {p.pricePerUnit} RWF / {p.unit} ·{" "}
                   {p.location}
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => startEdit(p)}
+                      className="rounded-md bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-900 hover:bg-emerald-200"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void deleteProduct(p._id)}
+                      className="rounded-md border border-red-200 bg-white px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </li>
             ))}

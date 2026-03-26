@@ -1,3 +1,4 @@
+import "./register-models";
 import mongoose from "mongoose";
 
 /**

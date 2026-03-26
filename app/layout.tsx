@@ -16,9 +16,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Agribridge — Farmers & buyers in Rwanda",
+  title: "AgriBridge — Farmers & buyers in Rwanda",
   description:
     "Bridge farmers with farmers and buyers across Rwanda — including rural areas like Nyabihu, Gakenke, Burera, and Rusizi — to sellers and markets everywhere.",
+  icons: {
+    icon: [{ url: "/favicon.png", type: "image/png" }],
+    apple: [{ url: "/favicon.png", type: "image/png" }],
+  },
 };
 
 export default function RootLayout({

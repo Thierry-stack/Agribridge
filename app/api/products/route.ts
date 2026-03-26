@@ -4,6 +4,7 @@ import { Product } from "@/models/Product";
 import { getAuthUser } from "@/lib/auth";
 import { escapeRegex } from "@/lib/string-utils";
 import { saveProductImage } from "@/lib/product-image";
+import { parseProductFields } from "@/lib/product-fields";
 
 /**
  * GET /api/products
@@ -49,47 +50,6 @@ export async function GET(request: Request) {
     const message = err instanceof Error ? err.message : "Failed to load products.";
     return NextResponse.json({ error: message }, { status: 500 });
   }
-}
-
-type ParsedProductFields = {
-  name: string;
-  productType: string;
-  quantity: number;
-  unit: string;
-  pricePerUnit: number;
-  location: string;
-};
-
-function parseFields(input: {
-  name: string;
-  productType: string;
-  quantity: unknown;
-  unit: string;
-  pricePerUnit: unknown;
-  location: string;
-}): { ok: true; values: ParsedProductFields } | { ok: false; error: string } {
-  const name = typeof input.name === "string" ? input.name.trim() : "";
-  const productType =
-    typeof input.productType === "string" ? input.productType.trim().toLowerCase() : "";
-  const unit = typeof input.unit === "string" ? input.unit.trim() : "";
-  const location = typeof input.location === "string" ? input.location.trim() : "";
-  const quantity = Number(input.quantity);
-  const pricePerUnit = Number(input.pricePerUnit);
-
-  if (!name || !productType || !unit || !location) {
-    return { ok: false, error: "name, productType, unit, and location are required." };
-  }
-  if (!Number.isFinite(quantity) || quantity < 0) {
-    return { ok: false, error: "quantity must be a non-negative number." };
-  }
-  if (!Number.isFinite(pricePerUnit) || pricePerUnit < 0) {
-    return { ok: false, error: "pricePerUnit must be a non-negative number." };
-  }
-
-  return {
-    ok: true,
-    values: { name, productType, quantity, unit, pricePerUnit, location },
-  };
 }
 
 export async function POST(request: Request) {
@@ -144,7 +104,7 @@ export async function POST(request: Request) {
       pricePerUnit = Number(body.pricePerUnit);
     }
 
-    const parsed = parseFields({
+    const parsed = parseProductFields({
       name,
       productType,
       quantity,
